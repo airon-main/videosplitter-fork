@@ -1,19 +1,29 @@
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: "androidx.navigation.safeargs.kotlin"
-apply plugin: "kotlin-kapt"
-apply plugin: "dagger.hilt.android.plugin"
-apply plugin: "com.google.gms.google-services"
-apply plugin: "com.google.firebase.crashlytics"
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
+    id 'kotlin-kapt'
+    id 'androidx.navigation.safeargs.kotlin'
+    id 'dagger.hilt.android.plugin'
+}
+
+if (file("google-services.json").exists()) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
 
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+boolean hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
-    signingConfigs {
-        release {
+    namespace "io.github.videosplitterapp"
+
+    if (hasKeystore) {
+        signingConfigs {
             release {
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
@@ -22,13 +32,12 @@ android {
             }
         }
     }
-    compileSdkVersion 33
-    buildToolsVersion "30.0.3"
+    compileSdk 34
 
     defaultConfig {
         applicationId "io.github.videosplitterapp"
-        minSdkVersion 21
-        targetSdkVersion 31
+        minSdk 24
+        targetSdk 34
         versionCode 8
 
         def majorVersion = 2
@@ -43,17 +52,19 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -62,9 +73,6 @@ android {
 
     lintOptions {
         checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        // abortOnError false
     }
 }
 
@@ -75,8 +83,9 @@ dependencies {
     implementation "androidx.core:core-ktx:$core_version"
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
-    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$viewmodel_version"
+    implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
     implementation "androidx.fragment:fragment-ktx:$fragment_version"
     implementation "androidx.activity:activity-ktx:$activity_version"
     implementation "androidx.navigation:navigation-fragment-ktx:$navigation_version"
@@ -86,8 +95,8 @@ dependencies {
     // Google Material
     implementation "com.google.android.material:material:$material_version"
 
-    // FFMpeg https://github.com/tanersener/mobile-ffmpeg
-    implementation "com.arthenica:mobile-ffmpeg-$ffmpeg_version"
+    // FFmpeg
+    implementation "com.github.tanersener:mobile-ffmpeg:$ffmpeg_version"
 
     // Binding adapter https://github.com/evant/binding-collection-adapter
     implementation "me.tatarka.bindingcollectionadapter2:bindingcollectionadapter:$bindingcollectionadapter_version"
@@ -103,8 +112,6 @@ dependencies {
     // Hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
-    implementation "androidx.hilt:hilt-lifecycle-viewmodel:$hilt_jetpack_version"
-    kapt "androidx.hilt:hilt-compiler:$hilt_jetpack_version"
 
     // Testing
     testImplementation "junit:junit:$junit_version"

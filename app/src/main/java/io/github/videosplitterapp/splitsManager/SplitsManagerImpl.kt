@@ -4,7 +4,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
-import androidx.hilt.lifecycle.ViewModelInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -23,7 +24,8 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class SplitsManagerImpl @ViewModelInject constructor(
+@HiltViewModel
+class SplitsManagerImpl @Inject constructor(
     private val ffMpegUtil: FFMpegUtil,
     private val fileManager: FileManager
 ) : ViewModel(), SplitsManager {

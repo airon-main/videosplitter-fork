@@ -3,7 +3,7 @@ package io.github.videosplitterapp.splits
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import io.github.videosplitterapp.library.localsplits.ActionModeViewModel
 import io.github.videosplitterapp.splitsManager.SliceModel
@@ -18,11 +18,7 @@ class SplitsActionModeViewModel(
 
     val inEditMode = MutableLiveData<Boolean>()
 
-    val isEmpty = Transformations.switchMap(splitsManager.slices) {
-        return@switchMap MutableLiveData<Boolean>().apply {
-            postValue(it.isEmpty())
-        }
-    }
+    val isEmpty = splitsManager.slices.map { it.isEmpty() }
 
     init {
         inEditMode.value = false

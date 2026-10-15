@@ -26,7 +26,6 @@ import io.github.videosplitterapp.library.ActionModeHelper
 import io.github.videosplitterapp.splitsManager.SplitsManager
 import io.github.videosplitterapp.splitsManager.SplitsManager.SplitType.*
 import io.github.videosplitterapp.splitsManager.SplitsManagerImpl
-import kotlinx.android.synthetic.main.library_fragment.*
 import me.tatarka.bindingcollectionadapter2.ItemBinding
 
 @AndroidEntryPoint
@@ -36,6 +35,9 @@ class ProjectSplitsFragment :
 
     private val projectSplitsViewModel: ProjectSplitsViewModel by viewModels()
     private val splitsManager: SplitsManagerImpl by activityViewModels()
+
+    private var _binding: ProjectSplitsFragmentBinding? = null
+    private val binding get() = _binding!!
 
     private val itemBinding =
         ItemBinding.of<ProjectSplitModel>(BR.item, R.layout.item_view_project_split)
@@ -73,20 +75,26 @@ class ProjectSplitsFragment :
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return ProjectSplitsFragmentBinding.inflate(inflater, container, false).also {
+        _binding = ProjectSplitsFragmentBinding.inflate(inflater, container, false).also {
             it.itemBinding = itemBinding
             it.viewModel = projectSplitsViewModel
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        recyclerView.apply {
+        binding.recyclerView.apply {
             val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             setLayoutManager(layoutManager)
             addItemDecoration(DividerItemDecoration(context, layoutManager.orientation))
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onItemClicked(item: ProjectSplitModel) {

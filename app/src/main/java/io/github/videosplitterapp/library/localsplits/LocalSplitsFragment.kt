@@ -27,6 +27,9 @@ class LocalSplitsFragment :
 
     private val localSplitsViewModel: LocalSplitsViewModel by viewModels()
 
+    private var _binding: LocalSplitsFragmentBinding? = null
+    private val binding get() = _binding!!
+
     private val itemBinding =
         ItemBinding.of<SliceModel>(BR.item, R.layout.item_view_split)
             .bindExtra(BR.viewInteraction, this)
@@ -46,20 +49,26 @@ class LocalSplitsFragment :
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return LocalSplitsFragmentBinding.inflate(inflater, container, false).also {
+        _binding = LocalSplitsFragmentBinding.inflate(inflater, container, false).also {
             it.localSplitsViewModel = localSplitsViewModel
             it.itemBinding = itemBinding
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        recyclerView.apply {
+        binding.recyclerView.apply {
             val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             setLayoutManager(layoutManager)
             addItemDecoration(SplitsDividerItemDecoration(context, layoutManager.orientation))
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onItemClick(item: SliceModel) {

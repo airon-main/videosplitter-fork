@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.lifecycle.MutableLiveData
 import com.arthenica.mobileffmpeg.Config
-import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
 import io.github.videosplitterapp.screens.settings.Settings
 import java.util.concurrent.TimeUnit
@@ -80,7 +79,7 @@ class FFMpegUtilImpl @Inject constructor(private val settings: Settings) : FFMpe
             state.postValue(
                 FFMpegUtil.State(
                     FFMpegUtil.Status.IN_PROGRESS,
-                    newStatistics.time,
+                    newStatistics.time.toInt(),
                     totalTime
                 )
             )
@@ -88,13 +87,10 @@ class FFMpegUtilImpl @Inject constructor(private val settings: Settings) : FFMpe
         commandRunning = true
         val rc = FFmpeg.execute(command)
         commandRunning = false
-        when (rc) {
-            RETURN_CODE_SUCCESS -> state.postValue(
-                FFMpegUtil.State(FFMpegUtil.Status.SUCCESS)
-            )
-            else -> state.postValue(
-                FFMpegUtil.State(FFMpegUtil.Status.FAILED)
-            )
+        if (Config.isSuccess(rc)) {
+            state.postValue(FFMpegUtil.State(FFMpegUtil.Status.SUCCESS))
+        } else {
+            state.postValue(FFMpegUtil.State(FFMpegUtil.Status.FAILED))
         }
     }
 
@@ -102,7 +98,7 @@ class FFMpegUtilImpl @Inject constructor(private val settings: Settings) : FFMpe
 
     override fun abort() {
         if (commandRunning) {
-            FFmpeg.cancel()
+            Config.cancel()
             commandRunning = false
         }
     }

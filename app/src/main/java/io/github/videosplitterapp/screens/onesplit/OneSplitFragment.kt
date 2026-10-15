@@ -11,6 +11,7 @@ import androidx.databinding.BindingAdapter
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ClippingMediaSource
 import com.google.android.exoplayer2.source.MediaSource
@@ -25,7 +26,6 @@ import io.github.videosplitterapp.R
 import io.github.videosplitterapp.databinding.OneSplitFragmentBinding
 import io.github.videosplitterapp.ktx.getDurationString
 import io.github.videosplitterapp.screens.thirtysecsplit.ThirtySecSplitViewInteraction
-import kotlinx.android.synthetic.main.view_one_split_main.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -36,6 +36,9 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
     private lateinit var player: SimpleExoPlayer
     private val oneSplitViewModel: OneSplitViewModel by viewModels()
 
+    private var _binding: OneSplitFragmentBinding? = null
+    private val binding get() = _binding!!
+
     companion object {
         private val TAG = OneSplitFragment::class.java.name
     }
@@ -45,18 +48,19 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return OneSplitFragmentBinding.inflate(inflater, container, false).also {
+        _binding = OneSplitFragmentBinding.inflate(inflater, container, false).also {
             it.oneSplitViewModel = oneSplitViewModel
             it.splitsManager = splitsManager
             it.viewInteraction = this
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         player = SimpleExoPlayer.Builder(requireContext()).build()
-        playerView.player = player
+        binding.playerView.player = player
         // Produces DataSource instances through which media data is loaded.
         val dataSourceFactory: DataSource.Factory = DefaultDataSourceFactory(
             requireContext(),
@@ -66,20 +70,22 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
             if (it != null) {
                 val max = TimeUnit.MILLISECONDS.toSeconds(it.duration)
                 oneSplitViewModel.setMinMax(0, max)
-                timeChooser.values = listOf(0f, max.toFloat())
+                binding.timeChooser.values = listOf(0f, max.toFloat())
                 val uri = Uri.fromFile(it.sourceFile)
+                val mediaItem = MediaItem.fromUri(uri)
                 // This is the MediaSource representing the media to be played.
                 var videoSource: MediaSource =
-                    ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(uri)
+                    ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
                 // Prepare the player with the source.
-                player.prepare(videoSource)
+                player.setMediaSource(videoSource)
+                player.prepare()
 
-                timeChooser.addOnChangeListener { slider, _, _ ->
+                binding.timeChooser.addOnChangeListener { slider, _, _ ->
                     val values = slider.values
                     oneSplitViewModel.setValues(values)
                 }
 
-                timeChooser.addOnSliderTouchListener(object : RangeSlider.OnSliderTouchListener {
+                binding.timeChooser.addOnSliderTouchListener(object : RangeSlider.OnSliderTouchListener {
                     override fun onStartTrackingTouch(slider: RangeSlider) {
                         Log.d(TAG, "onStartTrackingTouch() called with: slider = $slider")
                     }
@@ -93,10 +99,11 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
                             // This is the MediaSource representing the media to be played.
                             player.release()
                             videoSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-                                .createMediaSource(uri)
+                                .createMediaSource(mediaItem)
                             player = SimpleExoPlayer.Builder(requireContext()).build()
-                            playerView.player = player
-                            player.prepare(videoSource)
+                            binding.playerView.player = player
+                            player.setMediaSource(videoSource)
+                            player.prepare()
                             val clippingMediaSource: MediaSource =
                                 ClippingMediaSource(
                                     videoSource,
@@ -104,7 +111,8 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
                                     TimeUnit.SECONDS.toMicros(end)
                                 )
                             // Prepare the player with the source.
-                            player.prepare(clippingMediaSource)
+                            player.setMediaSource(clippingMediaSource)
+                            player.prepare()
                         }
                     }
                 })
@@ -122,6 +130,7 @@ class OneSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
     override fun onDestroyView() {
         super.onDestroyView()
         player.release()
+        _binding = null
     }
 
     override fun splitVideo() {

@@ -30,6 +30,9 @@ class SplitsFragment : Fragment(), SplitViewInteraction {
 
     private val splitsManager: SplitsManagerImpl by activityViewModels()
 
+    private var _binding: SplitsFragmentBinding? = null
+    private val binding get() = _binding!!
+
     private val itemBinding =
         ItemBinding.of<SliceModel>(BR.item, R.layout.item_view_split)
             .bindExtra(BR.viewInteraction, this)
@@ -46,21 +49,27 @@ class SplitsFragment : Fragment(), SplitViewInteraction {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return SplitsFragmentBinding.inflate(inflater, container, false).also {
+        _binding = SplitsFragmentBinding.inflate(inflater, container, false).also {
             it.splitsActionModeViewModel = splitsActionModeViewModel
             it.splitsManager = splitsManager
             it.itemBinding = itemBinding
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        recyclerView.apply {
+        binding.recyclerView.apply {
             val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             setLayoutManager(layoutManager)
             addItemDecoration(SplitsDividerItemDecoration(context, layoutManager.orientation))
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onItemClick(item: SliceModel) {

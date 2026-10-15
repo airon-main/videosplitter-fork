@@ -1,11 +1,10 @@
 package io.github.videosplitterapp.library.localsplits
 
-import android.net.Uri
-import androidx.core.net.toUri
-import androidx.hilt.lifecycle.ViewModelInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import io.github.videosplitterapp.filemanager.FileManager
 import io.github.videosplitterapp.splitsManager.SliceModel
@@ -14,7 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
-class LocalSplitsViewModel @ViewModelInject constructor(
+@HiltViewModel
+class LocalSplitsViewModel @Inject constructor(
     private val fileManager: FileManager
 ) : ViewModel(), ActionModeViewModel<SliceModel> {
 
@@ -24,11 +24,7 @@ class LocalSplitsViewModel @ViewModelInject constructor(
 
     val inEditMode = MutableLiveData<Boolean>()
 
-    val isEmpty = Transformations.switchMap(slices) {
-        return@switchMap MutableLiveData<Boolean>().apply {
-            postValue(it.isEmpty())
-        }
-    }
+    val isEmpty = slices.map { it.isEmpty() }
 
     init {
         slices.value = emptyList()

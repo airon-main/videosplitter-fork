@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -16,29 +17,32 @@ import com.google.android.exoplayer2.util.Util
 import io.github.videosplitterapp.BaseTopFragment
 import io.github.videosplitterapp.R
 import io.github.videosplitterapp.databinding.ThirtySecSplitFragmentBinding
-import kotlinx.android.synthetic.main.view_thirty_sec_split.*
 
 
 class ThirtySecSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction {
 
     private lateinit var player: SimpleExoPlayer
 
+    private var _binding: ThirtySecSplitFragmentBinding? = null
+    private val binding get() = _binding!!
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return ThirtySecSplitFragmentBinding.inflate(inflater, container, false).also {
+        _binding = ThirtySecSplitFragmentBinding.inflate(inflater, container, false).also {
             it.splitsManager = splitsManager
             it.viewInteraction = this
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         player = SimpleExoPlayer.Builder(requireContext()).build()
-        playerView.player = player
+        binding.playerView.player = player
         // Produces DataSource instances through which media data is loaded.
         val dataSourceFactory: DataSource.Factory = DefaultDataSourceFactory(
             requireContext(),
@@ -47,11 +51,13 @@ class ThirtySecSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction 
         splitsManager.fileMeta.observe(viewLifecycleOwner, Observer {
             if (it != null) {
                 val uri = Uri.fromFile(it.sourceFile)
+                val mediaItem = MediaItem.fromUri(uri)
                 // This is the MediaSource representing the media to be played.
                 val videoSource: MediaSource =
-                    ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(uri)
+                    ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
                 // Prepare the player with the source.
-                player.prepare(videoSource)
+                player.setMediaSource(videoSource)
+                player.prepare()
             }
         })
     }
@@ -66,6 +72,7 @@ class ThirtySecSplitFragment : BaseTopFragment(), ThirtySecSplitViewInteraction 
     override fun onDestroyView() {
         super.onDestroyView()
         player.release()
+        _binding = null
     }
 
     override fun splitVideo() {

@@ -1,11 +1,10 @@
 package io.github.videosplitterapp.library.project
 
-import android.net.Uri
-import androidx.core.net.toUri
-import androidx.hilt.lifecycle.ViewModelInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import io.github.videosplitterapp.filemanager.FileManager
 import io.github.videosplitterapp.filemanager.FileMeta
@@ -15,7 +14,8 @@ import io.github.videosplitterapp.splitsManager.SplitsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class LibraryViewModel @ViewModelInject constructor(
+@HiltViewModel
+class LibraryViewModel @Inject constructor(
     private val fileManager: FileManager
 ) : ViewModel(), ActionModeViewModel<ProjectModel> {
 
@@ -25,11 +25,7 @@ class LibraryViewModel @ViewModelInject constructor(
 
     val inEditMode = MutableLiveData<Boolean>()
 
-    val isEmpty = Transformations.switchMap(projects) {
-        return@switchMap MutableLiveData<Boolean>().apply {
-            postValue(it.isEmpty())
-        }
-    }
+    val isEmpty = projects.map { it.isEmpty() }
 
     init {
         projects.value = emptyList()

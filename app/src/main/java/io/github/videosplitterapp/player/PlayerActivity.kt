@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -28,13 +29,14 @@ import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import io.github.videosplitterapp.R
-import kotlinx.android.synthetic.main.player_activity.*
+import io.github.videosplitterapp.databinding.PlayerActivityBinding
 
 /**
  * A fullscreen activity to play audio or video streams.
  */
 class PlayerActivity : AppCompatActivity() {
 
+    private lateinit var binding: PlayerActivityBinding
     private var player: SimpleExoPlayer? = null
     private var playWhenReady = true
     private var currentWindow = 0
@@ -46,7 +48,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.player_activity)
+        binding = PlayerActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
     }
 
     public override fun onStart() {
@@ -82,7 +85,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun initializePlayer() {
         player = SimpleExoPlayer.Builder(this).build()
-        playerView?.player = player
+        binding.playerView.player = player
         val path = intent.extras?.let { PlayerActivityArgs.fromBundle(it).filePath }.orEmpty()
         Log.d(TAG, "initializePlayer: path = $path")
         val uri = Uri.parse(path)
@@ -90,7 +93,8 @@ class PlayerActivity : AppCompatActivity() {
         player?.let {
             it.playWhenReady = playWhenReady
             it.seekTo(currentWindow, playbackPosition)
-            it.prepare(mediaSource, false, false)
+            it.setMediaSource(mediaSource)
+            it.prepare()
         }
     }
 
@@ -108,11 +112,11 @@ class PlayerActivity : AppCompatActivity() {
         val dataSourceFactory: DataSource.Factory =
             DefaultDataSourceFactory(this, getString(R.string.app_name))
         return ProgressiveMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(uri)
+            .createMediaSource(MediaItem.fromUri(uri))
     }
 
     private fun hideSystemUi() {
-        playerView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
+        binding.playerView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY

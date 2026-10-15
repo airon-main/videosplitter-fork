@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ClippingMediaSource
 import com.google.android.exoplayer2.source.MediaSource
@@ -25,8 +26,6 @@ import io.github.videosplitterapp.BR
 import io.github.videosplitterapp.BaseTopFragment
 import io.github.videosplitterapp.R
 import io.github.videosplitterapp.databinding.ManualSplitFragmentBinding
-import kotlinx.android.synthetic.main.view_custom_split_main.playerView
-import kotlinx.android.synthetic.main.view_manual_split_main.*
 import me.tatarka.bindingcollectionadapter2.ItemBinding
 import java.util.concurrent.TimeUnit
 
@@ -36,6 +35,10 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
 
     private lateinit var player: SimpleExoPlayer
     private val manualSplitViewModel: ManualSplitViewModel by viewModels()
+
+    private var _binding: ManualSplitFragmentBinding? = null
+    private val binding get() = _binding!!
+
     private val itemBinding =
         ItemBinding.of<ManualSplitModel>(BR.item, R.layout.item_view_manual_split)
             .bindExtra(BR.viewInteraction, this)
@@ -49,19 +52,20 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return ManualSplitFragmentBinding.inflate(inflater, container, false).also {
+        _binding = ManualSplitFragmentBinding.inflate(inflater, container, false).also {
             it.itemBinding = itemBinding
             it.manualSplitViewModel = manualSplitViewModel
             it.splitsManager = splitsManager
             it.viewInteraction = this
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        splits.apply {
+        binding.splits.apply {
             val layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
             setLayoutManager(layoutManager)
             addItemDecoration(
@@ -72,7 +76,7 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
         }
 
         player = SimpleExoPlayer.Builder(requireContext()).build()
-        playerView.player = player
+        binding.playerView.player = player
         // Produces DataSource instances through which media data is loaded.
         val dataSourceFactory: DataSource.Factory = DefaultDataSourceFactory(
             requireContext(),
@@ -84,14 +88,15 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
                 manualSplitViewModel.lastSelectedItem.observe(viewLifecycleOwner, Observer { item ->
                     if (item != null) {
                         val index = manualSplitViewModel.items.indexOf(item)
-                        splits.smoothScrollToPosition(index)
+                        binding.splits.smoothScrollToPosition(index)
                         player.release()
                         player = SimpleExoPlayer.Builder(requireContext()).build()
-                        playerView.player = player
+                        binding.playerView.player = player
                         val uri = Uri.fromFile(it.sourceFile)
+                        val mediaItem = MediaItem.fromUri(uri)
                         // This is the MediaSource representing the media to be played.
                         val videoSource: MediaSource =
-                            ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(uri)
+                            ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
                         val clippingMediaSource: MediaSource =
                             ClippingMediaSource(
                                 videoSource,
@@ -99,7 +104,8 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
                                 TimeUnit.MILLISECONDS.toMicros(item.endMs)
                             )
                         // Prepare the player with the source.
-                        player.prepare(clippingMediaSource)
+                        player.setMediaSource(clippingMediaSource)
+                        player.prepare()
                     }
                 })
             }
@@ -116,6 +122,7 @@ class ManualSplitFragment : BaseTopFragment(), ManualSplitViewInteraction {
     override fun onDestroyView() {
         super.onDestroyView()
         player.release()
+        _binding = null
     }
 
     override fun onItemClick(manualSplitModel: ManualSplitModel) {

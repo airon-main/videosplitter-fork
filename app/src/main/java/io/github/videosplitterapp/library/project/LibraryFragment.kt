@@ -19,7 +19,6 @@ import io.github.videosplitterapp.databinding.LibraryFragmentBinding
 import io.github.videosplitterapp.filemanager.FileManager
 import io.github.videosplitterapp.filemanager.ProjectModel
 import io.github.videosplitterapp.library.ActionModeHelper
-import kotlinx.android.synthetic.main.library_fragment.*
 import me.tatarka.bindingcollectionadapter2.ItemBinding
 import javax.inject.Inject
 
@@ -32,6 +31,9 @@ class LibraryFragment : BaseTopFragment(),
 
     @Inject
     lateinit var fileManager: FileManager
+
+    private var _binding: LibraryFragmentBinding? = null
+    private val binding get() = _binding!!
 
     private val itemBinding =
         ItemBinding.of<ProjectModel>(BR.item, R.layout.item_view_project)
@@ -63,20 +65,26 @@ class LibraryFragment : BaseTopFragment(),
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return LibraryFragmentBinding.inflate(inflater, container, false).also {
+        _binding = LibraryFragmentBinding.inflate(inflater, container, false).also {
             it.itemBinding = itemBinding
             it.viewModel = libraryViewModel
             it.lifecycleOwner = viewLifecycleOwner
-        }.root
+        }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        recyclerView.apply {
+        binding.recyclerView.apply {
             val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             setLayoutManager(layoutManager)
             addItemDecoration(DividerItemDecoration(context, layoutManager.orientation))
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

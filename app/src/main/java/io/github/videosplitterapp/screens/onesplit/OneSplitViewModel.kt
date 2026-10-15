@@ -2,8 +2,8 @@ package io.github.videosplitterapp.screens.onesplit
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 
 class OneSplitViewModel : ViewModel() {
 
@@ -11,10 +11,8 @@ class OneSplitViewModel : ViewModel() {
     val maxValue = MutableLiveData<Float>()
     val selectedValues = MutableLiveData<List<Float>>()
 
-    val enableSplit: LiveData<Boolean> = Transformations.switchMap(selectedValues) { range ->
-        return@switchMap MutableLiveData<Boolean>().also {
-            it.value = (range[1] - range[0]) > 1
-        }
+    val enableSplit: LiveData<Boolean> = selectedValues.map { range ->
+        (range[1] - range[0]) > 1
     }
 
     init {
